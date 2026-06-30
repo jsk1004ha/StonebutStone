@@ -1,6 +1,6 @@
 {
   "name": "rock-simulator-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "main": "dist-electron/main.js",
   "description": "돌은 항상 돌입니다.",
