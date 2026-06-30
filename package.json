@@ -1,0 +1,98 @@
+{
+  "name": "rock-simulator-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist-electron/main.js",
+  "description": "돌은 항상 돌입니다.",
+  "author": "Codex",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jsk1004ha/StonebutStone.git"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "dev:electron": "node scripts/start-electron-dev.mjs",
+    "assets:rocks": "node scripts/generate-surreal-rock-assets.mjs",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build": "npm run typecheck && npm run build:electron && vite build && npm run verify:dist",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json",
+    "test": "vitest run",
+    "lint": "npm run typecheck",
+    "visual": "playwright test tests/visual.spec.ts --project=chromium",
+    "verify:dist": "node scripts/verify-dist.mjs",
+    "smoke:portable": "node scripts/smoke-portable.mjs",
+    "smoke:packaged-ui": "node scripts/smoke-packaged-ui.mjs",
+    "package:win": "npm run build && node scripts/package-win.mjs && npm run smoke:packaged-ui && npm run smoke:portable"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  },
+  "build": {
+    "appId": "com.codex.rocksimulator",
+    "productName": "돌 시뮬레이터",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "jsk1004ha",
+        "repo": "StonebutStone"
+      }
+    ],
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "asar": true,
+    "win": {
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "signDlls": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "rock-simulator-desktop-setup-${version}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "돌 시뮬레이터"
+    },
+    "portable": {
+      "artifactName": "rock-simulator-desktop-portable-${version}.${ext}"
+    }
+  }
+}

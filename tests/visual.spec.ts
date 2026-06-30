@@ -1,0 +1,13 @@
+import { expect, test } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
+
+test("captures Visual Ralph harness", async ({ page }) => {
+  await page.goto("http://127.0.0.1:5173/?view=harness");
+  await expect(page.getByText("돌은 항상 돌입니다.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "상호작용" })).toBeVisible();
+  await expect(page.locator('[data-testid="rock-stage"]')).toBeVisible();
+  const outputDir = path.resolve(".omx/artifacts/visual-ralph/rock-simulator");
+  fs.mkdirSync(outputDir, { recursive: true });
+  await page.screenshot({ path: path.join(outputDir, "render.png"), fullPage: true });
+});

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-electron/
+release/
+test-results/
+playwright-report/
+.omx/
+.env
+*.log
+github-release-screen*.png
+src/assets/rocks/catalog/
+src/assets/rocks/base-rock*.png
