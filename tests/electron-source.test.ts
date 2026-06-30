@@ -26,6 +26,8 @@ describe("Electron desktop contract", () => {
     expect(mainSource).toContain('ipcMain.handle("state:update"');
     expect(mainSource).toContain("setAlwaysOnTop(sanitizedPatch.pinned");
     expect(mainSource).toContain("setIgnoreMouseEvents(sanitizedPatch.clickThrough");
+    expect(mainSource).toContain("scheduleStateWrite()");
+    expect(mainSource).toContain("flushStateWrite()");
     expect(preloadSource).toContain('updateState: (patch: unknown) => ipcRenderer.invoke("state:update", patch)');
   });
 

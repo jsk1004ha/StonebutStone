@@ -21,11 +21,18 @@ npm run package:win
 
 ## Rock Assets
 
-The app bundles 100 surreal rock assets under `src/assets/rocks/catalog-webp`.
+The app bundles 100 standard surreal rock assets under `src/assets/rocks/catalog-webp`
+and 100 high-DPI variants under `src/assets/rocks/catalog-webp-2x`.
 Regenerate them from the checked-in source atlases with:
 
 ```bash
 npm run assets:rocks
+```
+
+Check the asset and runtime performance contract with:
+
+```bash
+npm run perf:assets
 ```
 
 ## Releases And Auto Update

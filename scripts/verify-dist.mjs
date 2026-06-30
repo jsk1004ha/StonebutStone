@@ -26,9 +26,9 @@ if (!hasRelativeBuildAsset) {
   process.exit(1);
 }
 
-if (rockAssetCount !== 100) {
-  console.error(`dist verification failed: expected 100 bundled rock webp assets, found ${rockAssetCount}`);
+if (rockAssetCount !== 200) {
+  console.error(`dist verification failed: expected 200 bundled standard/retina rock webp assets, found ${rockAssetCount}`);
   process.exit(1);
 }
 
-console.log("dist verification passed: relative assets and 100 bundled rock webp files");
+console.log("dist verification passed: relative assets and 200 bundled standard/retina rock webp files");

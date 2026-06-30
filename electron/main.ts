@@ -31,6 +31,8 @@ let overlayWindow: BrowserWindow | null = null;
 let panelWindow: BrowserWindow | null = null;
 let appState: RockAppState = DEFAULT_STATE;
 let updateCheckTimer: NodeJS.Timeout | null = null;
+let stateWriteTimer: NodeJS.Timeout | null = null;
+let stateWritePending = false;
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL) || !app.isPackaged;
 const devServerUrl = process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173";
@@ -141,6 +143,25 @@ function readState(): RockAppState {
 function writeState(state: RockAppState) {
   fs.mkdirSync(app.getPath("userData"), { recursive: true });
   fs.writeFileSync(statePath(), JSON.stringify(state, null, 2), "utf8");
+}
+
+function flushStateWrite() {
+  if (stateWriteTimer) {
+    clearTimeout(stateWriteTimer);
+    stateWriteTimer = null;
+  }
+  if (!stateWritePending) return;
+  stateWritePending = false;
+  writeState(appState);
+}
+
+function scheduleStateWrite() {
+  stateWritePending = true;
+  if (stateWriteTimer) {
+    clearTimeout(stateWriteTimer);
+  }
+  stateWriteTimer = setTimeout(flushStateWrite, 250);
+  stateWriteTimer.unref();
 }
 
 function broadcastState() {
@@ -254,7 +275,10 @@ app.whenReady().then(() => {
   });
 });
 
-app.on("before-quit", stopAutoUpdateChecks);
+app.on("before-quit", () => {
+  stopAutoUpdateChecks();
+  flushStateWrite();
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -267,7 +291,7 @@ ipcMain.handle("state:load", () => appState);
 ipcMain.handle("state:update", (_event, patch: unknown) => {
   const sanitizedPatch = sanitizePatch(patch);
   appState = normalizeState({ ...appState, ...sanitizedPatch });
-  writeState(appState);
+  scheduleStateWrite();
   if (typeof sanitizedPatch.pinned === "boolean") {
     overlayWindow?.setAlwaysOnTop(sanitizedPatch.pinned, "screen-saver");
     panelWindow?.setAlwaysOnTop(sanitizedPatch.pinned, "screen-saver");

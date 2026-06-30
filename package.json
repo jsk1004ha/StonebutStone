@@ -1,6 +1,6 @@
 {
   "name": "rock-simulator-desktop",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "main": "dist-electron/main.js",
   "description": "돌은 항상 돌입니다.",
@@ -19,6 +19,7 @@
     "test": "vitest run",
     "lint": "npm run typecheck",
     "visual": "playwright test tests/visual.spec.ts --project=chromium",
+    "perf:assets": "node scripts/perf-assets.mjs",
     "verify:dist": "node scripts/verify-dist.mjs",
     "smoke:portable": "node scripts/smoke-portable.mjs",
     "smoke:packaged-ui": "node scripts/smoke-packaged-ui.mjs",

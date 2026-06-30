@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import { INTERACTIONS } from "../src/data/interactions";
-import { ROCK_ASSET_COUNT } from "../src/data/rockAssets";
+import { ROCK_ASSET_COUNT, ROCK_RETINA_ASSET_COUNT } from "../src/data/rockAssets";
 import { ROCKS, getRockById } from "../src/data/rocks";
 import { interactionCountByCategory } from "../src/domain/rockSimulator";
 
@@ -13,7 +13,9 @@ describe("catalog data", () => {
     expect(new Set(ROCKS.map((rock) => rock.nameKo)).size).toBe(100);
     expect(ROCKS.every((rock) => rock.assetKey === rock.id)).toBe(true);
     expect(ROCK_ASSET_COUNT).toBe(100);
+    expect(ROCK_RETINA_ASSET_COUNT).toBe(100);
     expect(fs.readdirSync("src/assets/rocks/catalog-webp").filter((file) => /^rock-\d{3}\.webp$/.test(file))).toHaveLength(100);
+    expect(fs.readdirSync("src/assets/rocks/catalog-webp-2x").filter((file) => /^rock-\d{3}\.webp$/.test(file))).toHaveLength(100);
   });
 
   it("keeps visual names matched to fixed asset slots", () => {

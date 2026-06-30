@@ -19,7 +19,16 @@ export function RockStage({ rock, scale, mode = "harness", animationKey = "none"
   return (
     <section className={`rock-stage rock-stage--${mode}`} style={style} aria-label={rock.nameKo}>
       <div key={`${animationKey}-${animationTick}`} className={`rock-wrap rock-motion-${animationKey}`} data-testid="rock-stage">
-        <img className="rock-image" src={rockAsset} alt={rock.nameKo} draggable={false} />
+        <img
+          className="rock-image"
+          src={rockAsset.src}
+          srcSet={rockAsset.srcSet}
+          width={1440}
+          height={864}
+          alt={rock.nameKo}
+          decoding="async"
+          draggable={false}
+        />
       </div>
       <div className="rock-shadow" aria-hidden="true" />
     </section>

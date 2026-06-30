@@ -7,12 +7,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const atlasDir = path.join(rootDir, "src", "assets", "rocks", "source-atlases");
 const webpDir = path.join(rootDir, "src", "assets", "rocks", "catalog-webp");
-const pngDir = path.join(rootDir, "src", "assets", "rocks", "catalog");
+const retinaWebpDir = path.join(rootDir, "src", "assets", "rocks", "catalog-webp-2x");
 
 const atlasFiles = Array.from({ length: 4 }, (_, index) => `surreal-rock-atlas-${String(index + 1).padStart(2, "0")}.png`);
-const outputWidth = 1200;
-const outputHeight = 720;
 const gridSize = 5;
+const variants = [
+  { name: "standard", width: 960, height: 576, quality: 0.94, directory: webpDir },
+  { name: "retina", width: 1440, height: 864, quality: 0.93, directory: retinaWebpDir }
+];
 
 async function readAtlasDataUrl(fileName) {
   const filePath = path.join(atlasDir, fileName);
@@ -22,7 +24,7 @@ async function readAtlasDataUrl(fileName) {
 
 async function extractAtlas(page, dataUrl) {
   return page.evaluate(
-    async ({ dataUrlValue, gridSizeValue, outputWidthValue, outputHeightValue }) => {
+    async ({ dataUrlValue, gridSizeValue, variantValues }) => {
       const image = new Image();
       image.src = dataUrlValue;
       await image.decode();
@@ -221,6 +223,36 @@ async function extractAtlas(page, dataUrl) {
         return trimTransparent(imageData);
       }
 
+      function sharpen(canvas) {
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const { data, width, height } = imageData;
+        const source = new Uint8ClampedArray(data);
+        const amount = 0.22;
+
+        for (let y = 1; y < height - 1; y += 1) {
+          for (let x = 1; x < width - 1; x += 1) {
+            const pixel = y * width + x;
+            const offset = pixel * 4;
+            const alpha = source[offset + 3];
+            if (alpha < 16) continue;
+
+            const left = offset - 4;
+            const right = offset + 4;
+            const up = offset - width * 4;
+            const down = offset + width * 4;
+
+            for (let channel = 0; channel < 3; channel += 1) {
+              const centerValue = source[offset + channel];
+              const edge = centerValue * 4 - source[left + channel] - source[right + channel] - source[up + channel] - source[down + channel];
+              data[offset + channel] = Math.max(0, Math.min(255, Math.round(centerValue + edge * amount)));
+            }
+          }
+        }
+
+        context.putImageData(imageData, 0, 0);
+      }
+
       async function encode(canvas, type, quality) {
         return new Promise((resolve, reject) => {
           canvas.toBlob(
@@ -251,24 +283,27 @@ async function extractAtlas(page, dataUrl) {
           cellContext.drawImage(source, column * cellWidth, row * cellHeight, cellWidth, cellHeight, 0, 0, cell.width, cell.height);
 
           const box = removeChromaBackground(cell);
-          const output = document.createElement("canvas");
-          output.width = outputWidthValue;
-          output.height = outputHeightValue;
-          const outputContext = output.getContext("2d");
-          outputContext.imageSmoothingEnabled = true;
-          outputContext.imageSmoothingQuality = "high";
+          const encodedVariants = {};
 
-          const scale = Math.min((outputWidthValue * 0.78) / box.width, (outputHeightValue * 0.78) / box.height, 3.35);
-          const drawWidth = box.width * scale;
-          const drawHeight = box.height * scale;
-          const drawX = (outputWidthValue - drawWidth) / 2;
-          const drawY = (outputHeightValue - drawHeight) / 2;
-          outputContext.drawImage(cell, box.left, box.top, box.width, box.height, drawX, drawY, drawWidth, drawHeight);
+          for (const variant of variantValues) {
+            const output = document.createElement("canvas");
+            output.width = variant.width;
+            output.height = variant.height;
+            const outputContext = output.getContext("2d");
+            outputContext.imageSmoothingEnabled = true;
+            outputContext.imageSmoothingQuality = "high";
 
-          results.push({
-            webp: await encode(output, "image/webp", 0.95),
-            png: await encode(output, "image/png")
-          });
+            const scale = Math.min((variant.width * 0.78) / box.width, (variant.height * 0.78) / box.height, 3.35);
+            const drawWidth = box.width * scale;
+            const drawHeight = box.height * scale;
+            const drawX = (variant.width - drawWidth) / 2;
+            const drawY = (variant.height - drawHeight) / 2;
+            outputContext.drawImage(cell, box.left, box.top, box.width, box.height, drawX, drawY, drawWidth, drawHeight);
+            sharpen(output);
+            encodedVariants[variant.name] = await encode(output, "image/webp", variant.quality);
+          }
+
+          results.push(encodedVariants);
         }
       }
 
@@ -277,17 +312,16 @@ async function extractAtlas(page, dataUrl) {
     {
       dataUrlValue: dataUrl,
       gridSizeValue: gridSize,
-      outputWidthValue: outputWidth,
-      outputHeightValue: outputHeight
+      variantValues: variants.map(({ name, width, height, quality }) => ({ name, width, height, quality }))
     }
   );
 }
 
 await fs.mkdir(webpDir, { recursive: true });
-await fs.mkdir(pngDir, { recursive: true });
+await fs.mkdir(retinaWebpDir, { recursive: true });
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: outputWidth, height: outputHeight }, deviceScaleFactor: 1 });
+const page = await browser.newPage({ viewport: { width: 1440, height: 864 }, deviceScaleFactor: 1 });
 
 try {
   let outputIndex = 1;
@@ -298,10 +332,10 @@ try {
 
     for (const asset of assets) {
       const name = `rock-${String(outputIndex).padStart(3, "0")}`;
-      await Promise.all([
-        fs.writeFile(path.join(webpDir, `${name}.webp`), Buffer.from(asset.webp, "base64")),
-        fs.writeFile(path.join(pngDir, `${name}.png`), Buffer.from(asset.png, "base64"))
-      ]);
+      await Promise.all(variants.map((variant) => {
+        const output = asset[variant.name];
+        return fs.writeFile(path.join(variant.directory, `${name}.webp`), Buffer.from(output, "base64"));
+      }));
       outputIndex += 1;
     }
 
@@ -311,4 +345,4 @@ try {
   await browser.close();
 }
 
-console.log("Generated 100 bundled photoreal surreal rock assets from source atlases");
+console.log("Generated 100 standard and 100 retina surreal rock assets from source atlases");

@@ -87,7 +87,6 @@ button {
   padding: 0 22px;
   color: rgba(255, 255, 255, 0.84);
   background: rgba(15, 17, 19, 0.72);
-  backdrop-filter: blur(18px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -144,6 +143,7 @@ button {
   height: 100%;
   display: grid;
   place-items: center;
+  contain: layout paint style;
   -webkit-app-region: drag;
 }
 
@@ -160,8 +160,20 @@ button {
   width: min(100%, calc(760px * var(--rock-scale)));
   max-height: calc(430px * var(--rock-scale));
   aspect-ratio: 1.8 / 1;
+  contain: layout paint;
   transform-origin: center bottom;
+  will-change: transform;
   animation: rock-idle 11s ease-in-out infinite;
+}
+
+.rock-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 5% 11%;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(112deg, transparent 0 42%, rgba(255, 255, 255, 0.38) 48%, transparent 56% 100%);
+  transform: translateX(-42%);
 }
 
 .rock-image {
@@ -172,7 +184,7 @@ button {
   object-fit: contain;
   user-select: none;
   pointer-events: none;
-  filter: drop-shadow(0 24px 24px rgba(0, 0, 0, 0.28));
+  image-rendering: auto;
 }
 
 .rock-shadow {
@@ -183,7 +195,6 @@ button {
   height: 13%;
   border-radius: 50%;
   background: radial-gradient(ellipse, rgba(0, 0, 0, 0.42), transparent 68%);
-  filter: blur(7px);
   transform: scaleX(calc(0.82 + var(--rock-scale) * 0.1));
   pointer-events: none;
 }
@@ -196,8 +207,8 @@ button {
   animation: rock-pulse 520ms ease, rock-idle 11s ease-in-out infinite;
 }
 
-.rock-motion-glint .rock-image {
-  animation: rock-image-glint 620ms ease;
+.rock-motion-glint::after {
+  animation: rock-glint 620ms ease;
 }
 
 .rock-motion-settle {
@@ -588,14 +599,16 @@ button {
   }
 }
 
-@keyframes rock-image-glint {
+@keyframes rock-glint {
   0%,
   100% {
-    filter: drop-shadow(0 24px 24px rgba(0, 0, 0, 0.28)) brightness(1) contrast(1);
+    opacity: 0;
+    transform: translateX(-42%);
   }
 
   50% {
-    filter: drop-shadow(0 26px 28px rgba(0, 0, 0, 0.32)) brightness(1.18) contrast(1.08);
+    opacity: 1;
+    transform: translateX(42%);
   }
 }
 
